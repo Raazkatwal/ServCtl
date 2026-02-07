@@ -1,4 +1,6 @@
-int main(void)
+#include "app.h"
+
+int main(int argc, char **argv)
 {
-	return 0;
+	return servctl_run(argc, argv);
 }

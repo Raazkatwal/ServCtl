@@ -13,7 +13,9 @@ gtk_dep = dependency('gtk4')
 executable(
   'servctl',
   sources: [
-    'src/main.c'
+    'src/main.c',
+    'src/app.c',
+    'src/window.c',
   ],
   dependencies: [
     gtk_dep
