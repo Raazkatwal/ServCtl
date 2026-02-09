@@ -1,41 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk" version="4.0"/>
-  <object class="GtkApplicationWindow" id="main_window">
-    <property name="title">ServCtl</property>
-    <property name="default-width">700</property>
-    <property name="default-height">400</property>
+	<requires lib="gtk" version="4.0" />
 
-    <child>
-      <object class="GtkBox" id="main_box">
-        <property name="orientation">vertical</property>
-        <property name="spacing">10</property>
-        <property name="margin-top">20</property>
-        <property name="margin-start">20</property>
-        <property name="margin-end">20</property>
-        <property name="margin-bottom">20</property>
+	<object class="GtkApplicationWindow" id="main_window">
+		<property name="title">ServCtl</property>
+		<property name="default-width">720</property>
+		<property name="default-height">600</property>
 
-        <child>
-          <object class="GtkLabel" id="header_label">
-            <property name="label">ServCtl — Service Manager</property>
-            <property name="halign">center</property>
-            <property name="valign">start</property>
-            <attributes>
-              <attribute name="scale" value="1.5"/>
-              <attribute name="weight" value="bold"/>
-            </attributes>
-          </object>
-        </child>
+		<child>
+			<object class="GtkBox" id="root_box">
+				<property name="orientation">vertical</property>
+				<property name="spacing">16</property>
+				<property name="margin-top">16</property>
+				<property name="margin-bottom">16</property>
+				<property name="margin-start">16</property>
+				<property name="margin-end">16</property>
 
-        <child>
-          <object class="GtkLabel" id="placeholder_label">
-            <property name="label">Select a service to manage</property>
-            <property name="halign">center</property>
-            <property name="valign">center</property>
-          </object>
-        </child>
+				<!-- Top buttons -->
+				<child>
+					<object class="GtkBox" id="global_controls">
+						<property name="orientation">horizontal</property>
+						<property name="spacing">10</property>
+						<property name="halign">center</property>
 
-      </object>
-    </child>
-  </object>
+						<child>
+							<object class="GtkButton" id="btn_start_all">
+								<property name="label">Start All</property>
+							</object>
+						</child>
+
+						<child>
+							<object class="GtkButton" id="btn_stop_all">
+								<property name="label">Stop All</property>
+							</object>
+						</child>
+
+						<child>
+							<object class="GtkButton" id="btn_restart_all">
+								<property name="label">Restart All</property>
+							</object>
+						</child>
+					</object>
+				</child>
+
+				<!-- Service list -->
+				<child>
+					<object class="GtkScrolledWindow">
+						<property name="hexpand">true</property>
+						<property name="vexpand">true</property>
+
+						<child>
+							<object class="GtkListBox" id="service_list">
+								<property name="selection-mode">none</property>
+							</object>
+						</child>
+					</object>
+				</child>
+
+				<!-- Bottom button -->
+				<child>
+					<object class="GtkButton" id="btn_add_service">
+						<property name="label">+ Add Service</property>
+						<property name="halign">center</property>
+					</object>
+				</child>
+
+			</object>
+		</child>
+	</object>
+
 </interface>
