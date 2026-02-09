@@ -22,3 +22,6 @@ executable(
   ],
   install: true
 )
+
+install_subdir('resources', install_dir: get_option('prefix') + '/share/servctl')
+install_subdir('data', install_dir: get_option('prefix') + '/share/servctl')

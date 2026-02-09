@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkApplicationWindow" id="main_window">
+    <property name="title">ServCtl</property>
+    <property name="default-width">700</property>
+    <property name="default-height">400</property>
+
+    <child>
+      <object class="GtkBox" id="main_box">
+        <property name="orientation">vertical</property>
+        <property name="spacing">10</property>
+        <property name="margin-top">20</property>
+        <property name="margin-start">20</property>
+        <property name="margin-end">20</property>
+        <property name="margin-bottom">20</property>
+
+        <child>
+          <object class="GtkLabel" id="header_label">
+            <property name="label">ServCtl — Service Manager</property>
+            <property name="halign">center</property>
+            <property name="valign">start</property>
+            <attributes>
+              <attribute name="scale" value="1.5"/>
+              <attribute name="weight" value="bold"/>
+            </attributes>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkLabel" id="placeholder_label">
+            <property name="label">Select a service to manage</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+          </object>
+        </child>
+
+      </object>
+    </child>
+  </object>
+</interface>
