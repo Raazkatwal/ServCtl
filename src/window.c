@@ -12,6 +12,10 @@ static GtkWidget *create_service_row(const char *service_name) {
   GtkWidget *button;
 
   row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+	gtk_widget_set_margin_top(row, 6);
+	gtk_widget_set_margin_bottom(row, 6);
+	gtk_widget_set_margin_start(row, 12);
+	gtk_widget_set_margin_end(row, 12);
 
   label = gtk_label_new(service_name);
   gtk_widget_set_hexpand(label, TRUE);
