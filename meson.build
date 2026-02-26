@@ -9,6 +9,7 @@ project(
 )
 
 gtk_dep = dependency('gtk4')
+adw_dep = dependency('libadwaita-1')
 
 executable(
   'servctl',
@@ -18,7 +19,8 @@ executable(
     'src/window.c',
   ],
   dependencies: [
-    gtk_dep
+    gtk_dep,
+    adw_dep
   ],
   install: true
 )

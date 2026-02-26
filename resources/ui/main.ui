@@ -1,72 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
 	<requires lib="gtk" version="4.0" />
+	<requires lib="adwaita" version="1.0" />
 
-	<object class="GtkApplicationWindow" id="main_window">
-		<property name="title">ServCtl</property>
-		<property name="default-width">720</property>
+	<menu id="app-menu">
+		<section>
+			<item>
+				<attribute name="label">Preferences</attribute>
+				<attribute name="action">app.preferences</attribute>
+			</item>
+			<item>
+				<attribute name="label">Keyboard Shortcuts</attribute>
+				<attribute name="action">app.shortcuts</attribute>
+			</item>
+		</section>
+		<section>
+			<item>
+				<attribute name="label">About ServCtl</attribute>
+				<attribute name="action">app.about</attribute>
+			</item>
+		</section>
+	</menu>
+
+	<object class="AdwApplicationWindow" id="main_window">
+		<property name="default-width">900</property>
 		<property name="default-height">600</property>
+		<property name="title">ServCtl</property>
 
 		<child>
-			<object class="GtkBox" id="root_box">
-				<property name="orientation">vertical</property>
-				<property name="spacing">16</property>
-				<property name="margin-top">16</property>
-				<property name="margin-bottom">16</property>
-				<property name="margin-start">16</property>
-				<property name="margin-end">16</property>
+			<object class="AdwToolbarView">
 
-				<!-- Top buttons -->
-				<child>
-					<object class="GtkBox" id="global_controls">
-						<property name="orientation">horizontal</property>
-						<property name="spacing">10</property>
-						<property name="halign">center</property>
+				<child type="top">
+					<object class="AdwHeaderBar">
+						<property name="show-start-title-buttons">true</property>
+						<property name="show-end-title-buttons">true</property>
 
-						<child>
-							<object class="GtkButton" id="btn_start_all">
-								<property name="label">Start All</property>
+						<property name="title-widget">
+							<object class="GtkLabel">
+								<property name="label">System Services</property>
+								<style>
+									<class name="title-1" />
+								</style>
 							</object>
-						</child>
-
-						<child>
-							<object class="GtkButton" id="btn_stop_all">
-								<property name="label">Stop All</property>
-							</object>
-						</child>
-
-						<child>
-							<object class="GtkButton" id="btn_restart_all">
-								<property name="label">Restart All</property>
-							</object>
-						</child>
+						</property>
 					</object>
 				</child>
 
-				<!-- Service list -->
-				<child>
-					<object class="GtkScrolledWindow">
-						<property name="hexpand">true</property>
-						<property name="vexpand">true</property>
+				<property name="content">
+					<object class="AdwViewStack" id="view_stack">
 
 						<child>
-							<object class="GtkListBox" id="service_list">
-								<property name="selection-mode">none</property>
+							<object class="AdwViewStackPage">
+								<property name="name">services</property>
+								<property name="title">Services</property>
+
+								<property name="child">
+									<object class="AdwClamp">
+										<property name="maximum-size">900</property>
+
+										<child>
+											<object class="AdwPreferencesGroup" id="service_group">
+												<property name="title">Available Services</property>
+											</object>
+										</child>
+
+									</object>
+								</property>
 							</object>
 						</child>
-					</object>
-				</child>
 
-				<!-- Bottom button -->
-				<child>
-					<object class="GtkButton" id="btn_add_service">
-						<property name="label">+ Add Service</property>
-						<property name="halign">center</property>
 					</object>
-				</child>
+				</property>
 
 			</object>
 		</child>
-	</object>
 
+	</object>
 </interface>

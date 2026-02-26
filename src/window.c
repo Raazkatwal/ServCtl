@@ -1,4 +1,6 @@
 #include "window.h"
+#include "glib-object.h"
+#include <adwaita.h>
 #include <gtk/gtk.h>
 
 static void on_service_button_clicked(GtkButton *button, gpointer user_data) {
@@ -7,58 +9,43 @@ static void on_service_button_clicked(GtkButton *button, gpointer user_data) {
 }
 
 static GtkWidget *create_service_row(const char *service_name) {
-  GtkWidget *row;
-  GtkWidget *label;
-  GtkWidget *button;
+  GtkWidget *row = adw_action_row_new();
+	adw_action_row_set_subtitle(ADW_ACTION_ROW(row), service_name);
 
-  row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-	gtk_widget_set_margin_top(row, 6);
-	gtk_widget_set_margin_bottom(row, 6);
-	gtk_widget_set_margin_start(row, 12);
-	gtk_widget_set_margin_end(row, 12);
+	GtkWidget *button = gtk_button_new_from_icon_name("media-playback-start-symbolic");
 
-  label = gtk_label_new(service_name);
-  gtk_widget_set_hexpand(label, TRUE);
-  gtk_widget_set_halign(label, GTK_ALIGN_START);
+	gtk_widget_add_css_class(button, "flat");
 
-  button = gtk_button_new_from_icon_name("media-playback-start-symbolic");
-  g_signal_connect(button, "clicked", G_CALLBACK(on_service_button_clicked),
-                   (gpointer)service_name);
+	g_signal_connect(button, "clicked", G_CALLBACK(on_service_button_clicked), (gpointer) service_name);
 
-  gtk_box_append(GTK_BOX(row), label);
-  gtk_box_append(GTK_BOX(row), button);
+  
+	adw_action_row_add_suffix(ADW_ACTION_ROW(row), button);
 
   return row;
 }
 
-GtkWindow *servctl_window_new(GtkApplication *app) {
+GtkWindow *servctl_window_new(AdwApplication *app) {
   GtkBuilder *builder;
   GtkWidget *window;
-  GtkWidget *service_list;
+  GtkWidget *service_group;
 
   builder = gtk_builder_new_from_file("resources/ui/main.ui");
 
   window = GTK_WIDGET(gtk_builder_get_object(builder, "main_window"));
 
-  service_list = GTK_WIDGET(gtk_builder_get_object(builder, "service_list"));
+  service_group = GTK_WIDGET(gtk_builder_get_object(builder, "service_group"));
 
   const char *services[] = {"apache2", "nginx", "mysql", "postgresql", NULL};
 
   for (int i = 0; services[i]; i++) {
     GtkWidget *row = create_service_row(services[i]);
-    gtk_list_box_append(GTK_LIST_BOX(service_list), row);
+		adw_preferences_group_add(ADW_PREFERENCES_GROUP(service_group), row);
   }
 
-  gtk_window_set_application(GTK_WINDOW(window), app);
+  gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
 
-  GtkCssProvider *css_provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_path(css_provider, "resources/style.css");
-  gtk_style_context_add_provider_for_display(gdk_display_get_default(),
-                                             GTK_STYLE_PROVIDER(css_provider),
-                                             GTK_STYLE_PROVIDER_PRIORITY_USER);
 
   g_object_unref(builder);
-  g_object_unref(css_provider);
 
   return GTK_WINDOW(window);
 }

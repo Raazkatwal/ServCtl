@@ -11,3 +11,163 @@
 	padding: 6px 12px;
 	border-radius: 4px;
 } */
+
+/* Palette */
+@define-color bg_base       #0e0f11;
+@define-color bg_surface    #161719;
+@define-color bg_elevated   #1e2023;
+@define-color bg_hover      #25282c;
+@define-color border_subtle #2a2d32;
+@define-color border_strong #3a3e45;
+@define-color accent        #4f9eff;
+@define-color accent_dim    rgba(79,158,255,0.15);
+@define-color accent_hover  #71b3ff;
+@define-color danger        #ff5f5f;
+@define-color danger_dim    rgba(255,95,95,0.12);
+@define-color success       #3dd68c;
+@define-color success_dim   rgba(61,214,140,0.12);
+@define-color warning       #f5a623;
+@define-color text_primary  #e8eaed;
+@define-color text_secondary #8b9099;
+@define-color text_muted    #55585e;
+
+window {
+  background-color: @bg_base;
+  color: @text_primary;
+  font-family: "IBM Plex Sans", "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+headerbar {
+  background-color: @bg_surface;
+  border-bottom: 1px solid @border_subtle;
+  min-height: 44px;
+  padding: 0 12px;
+  box-shadow: none;
+}
+headerbar .title {
+  font-family: "IBM Plex Mono", "JetBrains Mono", monospace;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: @text_primary;
+}
+headerbar .subtitle {
+  font-size: 11px;
+  color: @text_muted;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+#global_controls button {
+  background-color: @bg_elevated;
+  color: @text_secondary;
+  border: 1px solid @border_subtle;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: none;
+  min-height: 0;
+}
+#global_controls button:hover {
+  background-color: @bg_hover;
+  color: @text_primary;
+  border-color: @border_strong;
+}
+#btn_start_all:hover   { color: @success; border-color: @success; }
+#btn_stop_all:hover    { color: @danger;  border-color: @danger;  }
+#btn_restart_all:hover { color: @warning; border-color: @warning; }
+
+#section_label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: @text_muted;
+}
+
+scrolledwindow {
+  background-color: transparent;
+  border-radius: 8px;
+  border: 1px solid @border_subtle;
+}
+
+#service_list {
+  background-color: @bg_surface;
+  border-radius: 8px;
+}
+#service_list > row {
+  padding: 0;
+  border-bottom: 1px solid @border_subtle;
+}
+#service_list > row:last-child { border-bottom: none; }
+#service_list > row:hover      { background-color: @bg_hover; }
+
+.service-row  { padding: 12px 16px; }
+.service-name { font-weight: 600; font-size: 13px; color: @text_primary; }
+.service-desc { font-size: 11px; color: @text_muted; margin-top: 1px; }
+
+.status-badge {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  padding: 2px 7px;
+  min-height: 0;
+}
+.status-running {
+  background-color: @success_dim;
+  color: @success;
+  border: 1px solid rgba(61,214,140,0.25);
+}
+.status-stopped {
+  background-color: @danger_dim;
+  color: @danger;
+  border: 1px solid rgba(255,95,95,0.20);
+}
+.status-unknown {
+  background-color: rgba(139,144,153,0.12);
+  color: @text_secondary;
+  border: 1px solid @border_subtle;
+}
+
+.row-action {
+  background-color: transparent;
+  color: @text_muted;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
+  min-height: 0;
+  box-shadow: none;
+}
+.row-action:hover              { background-color: @bg_elevated; color: @text_primary; border-color: @border_subtle; }
+.row-action.start:hover        { color: @success; border-color: rgba(61,214,140,0.35); }
+.row-action.stop:hover         { color: @danger;  border-color: rgba(255,95,95,0.35);  }
+.row-action.restart:hover      { color: @warning; border-color: rgba(245,166,35,0.35); }
+.row-action.logs:hover         { color: @accent;  border-color: rgba(79,158,255,0.35); }
+
+#btn_add_service {
+  background-color: transparent;
+  color: @accent;
+  border: 1px dashed rgba(79,158,255,0.35);
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  box-shadow: none;
+}
+#btn_add_service:hover  { background-color: @accent_dim; border-color: @accent; color: @accent_hover; }
+#btn_add_service:active { background-color: rgba(79,158,255,0.08); }
+
+scrollbar { background-color: transparent; }
+scrollbar slider {
+  background-color: @border_strong;
+  border-radius: 4px;
+  min-width: 4px;
+  min-height: 4px;
+}
+scrollbar slider:hover { background-color: @text_muted; }
