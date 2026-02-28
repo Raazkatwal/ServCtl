@@ -22,6 +22,7 @@ servctl_resources = gnome.compile_resources(
 executable('servctl',
   sources: [
     'src/main.c',
+    'src/servctl-application.c',
     'src/servctl-window.c',
     servctl_resources
   ],
