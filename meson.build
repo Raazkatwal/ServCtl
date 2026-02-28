@@ -10,17 +10,24 @@ project(
 
 gtk_dep = dependency('gtk4')
 adw_dep = dependency('libadwaita-1')
+gnome = import('gnome')
 
-executable(
-  'servctl',
+servctl_resources = gnome.compile_resources(
+  'servctl-resources',
+  'resources/servctl.gresource.xml',
+  source_dir: 'resources',
+  c_name: 'servctl'
+)
+
+executable('servctl',
   sources: [
     'src/main.c',
-    'src/app.c',
-    'src/window.c',
+    'src/servctl-window.c',
+    servctl_resources
   ],
   dependencies: [
-    gtk_dep,
-    adw_dep
+    dependency('gtk4'),
+    dependency('libadwaita-1')
   ],
   install: true
 )

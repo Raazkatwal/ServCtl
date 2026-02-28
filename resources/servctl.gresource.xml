@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+	<gresource prefix="/com/raaz/servctl">
+		<file preprocess="xml-stripblanks">ui/servctl-window.ui</file>
+	</gresource>
+</gresources>

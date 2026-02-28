@@ -44,21 +44,10 @@ static void on_activate(AdwApplication *app, gpointer user_data) {
   (void)user_data;
 
   GtkWindow *window = servctl_window_new(app);
-
-  /* GtkBuilder *builder = gtk_builder_new_from_file("resources/ui/main.ui");
-  GMenuModel *app_menu =
-      G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
-
-  adw_application_set_app_menu(GTK_APPLICATION(app), app_menu);
-
-  g_object_unref(builder); */
-
   gtk_window_present(window);
 }
 
 int servctl_run(int argc, char **argv) {
-  int status;
-
   AdwApplication *app =
       adw_application_new("com.raaz.servctl", G_APPLICATION_DEFAULT_FLAGS);
 
@@ -67,8 +56,8 @@ int servctl_run(int argc, char **argv) {
 
   g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
 
-  status = g_application_run(G_APPLICATION(app), argc, argv);
-  g_object_unref(app);
+  int status = g_application_run(G_APPLICATION(app), argc, argv);
 
+  g_object_unref(app);
   return status;
 }

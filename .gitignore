@@ -1,4 +1,5 @@
 build/
+set/
 *.o
 *.exe
 servctl
