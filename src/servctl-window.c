@@ -1,4 +1,5 @@
 #include "servctl-window.h"
+#include <gtk/gtk.h>
 
 struct _ServctlWindow {
   AdwApplicationWindow parent_instance;
@@ -21,11 +22,16 @@ static GtkWidget *create_service_row(const char *service_name) {
       gtk_button_new_from_icon_name("media-playback-start-symbolic");
 
   gtk_widget_add_css_class(button, "flat");
+  gtk_widget_add_css_class(button, "circular");
 
   g_signal_connect(button, "clicked", G_CALLBACK(on_service_button_clicked),
                    (gpointer)service_name);
 
-  adw_action_row_add_suffix(ADW_ACTION_ROW(row), button);
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+  gtk_box_append(GTK_BOX(box), button);
+
+  adw_action_row_add_suffix(ADW_ACTION_ROW(row), box);
 
   return row;
 }
