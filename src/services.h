@@ -1,8 +1,12 @@
-#ifndef SERVCTL_SERVICES_H
-#define SERVCTL_SERVICES_H
+#pragma once
+#include "gio/gio.h"
+#include <glib.h>
 
-char **servctl_get_services(void);
+void services_list_async(GAsyncReadyCallback callback, gpointer user_data);
 
-void servctl_free_services(char **services);
+char **services_list_finish(GAsyncResult *res, GError **error);
 
-#endif
+void service_toggle_async(const char *service, gboolean start,
+                          GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean service_toggle_finish(GAsyncResult *res, GError **error);

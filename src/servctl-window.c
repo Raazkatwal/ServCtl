@@ -1,4 +1,9 @@
 #include "servctl-window.h"
+#include "gio/gio.h"
+#include "glib-object.h"
+#include "glib.h"
+#include "gtk/gtkshortcut.h"
+#include "services.h"
 #include <gtk/gtk.h>
 
 struct _ServctlWindow {
@@ -36,15 +41,31 @@ static GtkWidget *create_service_row(const char *service_name) {
   return row;
 }
 
-static void servctl_window_init(ServctlWindow *self) {
-  gtk_widget_init_template(GTK_WIDGET(self));
+static void on_services_loaded(GObject *source, GAsyncResult *res,
+                               gpointer user_data) {
+  ServctlWindow *self = user_data;
+  GError *error = NULL;
 
-  const char *services[] = {"apache2", "nginx", "mysql", "postgresql", NULL};
+  char **services = services_list_finish(res, &error);
+
+  if (error) {
+    g_warning("%s", error->message);
+    g_error_free(error);
+    return;
+  }
 
   for (int i = 0; services[i]; i++) {
     GtkWidget *row = create_service_row(services[i]);
     adw_preferences_group_add(self->service_group, row);
   }
+
+  g_strfreev(services);
+}
+
+static void servctl_window_init(ServctlWindow *self) {
+  gtk_widget_init_template(GTK_WIDGET(self));
+
+	services_list_async(on_services_loaded, self);
 }
 
 static void servctl_window_class_init(ServctlWindowClass *klass) {
