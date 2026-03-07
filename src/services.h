@@ -10,3 +10,5 @@ void service_toggle_async(const char *service, gboolean start,
                           GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean service_toggle_finish(GAsyncResult *res, GError **error);
+
+char *services_get_status(const char *service);

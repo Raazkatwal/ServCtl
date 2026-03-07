@@ -1,0 +1,11 @@
+<schemalist>
+	<schema id="com.raaz.servctl" path="/com/raaz/servctl/">
+		<key name="services" type="as">
+			<default>['apache2.service','mysql.service','mssql-service.service','postgresql.service']</default>
+			<summary>Tracked Services</summary>
+			<description>
+				List of systemd services displayed in Servctl.
+			</description>
+		</key>
+	</schema>
+</schemalist>

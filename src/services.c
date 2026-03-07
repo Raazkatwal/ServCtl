@@ -1,53 +1,58 @@
 #include "services.h"
-#include "gio/gio.h"
-#include "glib-object.h"
+#include "utils.h"
+#include <gio/gio.h>
 #include <glib.h>
 
 static void services_list_thread(GTask *task, gpointer source,
                                  gpointer task_data,
                                  GCancellable *cancellable) {
-  GError *error = NULL;
+  g_autoptr(GError) error = NULL;
+  g_autoptr(GSettings) settings = g_settings_new("com.raaz.servctl");
 
-  GSubprocess *proc = g_subprocess_new(
-      G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error, "systemctl", "list-units",
-      "--type=service", "--no-legend", "--no-pager", NULL);
-
-  if (!proc) {
-    g_task_return_error(task, error);
-    return;
-  }
-
-  gchar *stdout_buf = NULL;
-
-  if (!g_subprocess_communicate_utf8(proc, NULL, NULL, &stdout_buf, NULL,
-                                     &error)) {
-    g_object_unref(proc);
-    g_task_return_error(task, error);
-    return;
-  }
+  g_auto(GStrv) services = g_settings_get_strv(settings, "services");
 
   GPtrArray *array = g_ptr_array_new_with_free_func(g_free);
 
-  gchar **lines = g_strsplit(stdout_buf, "\n", -1);
+  for (int i = 0; services[i] != NULL; i++) {
 
-  for (int i = 0; lines[i]; i++) {
+    const char *service = services[i];
 
-    gchar *line = g_strstrip(lines[i]);
+    g_autoptr(GSubprocess) proc =
+        g_subprocess_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error, "systemctl",
+                         "is-active", service, NULL);
 
-    if (strlen(line) == 0)
-      continue;
+    if (!proc) {
+      g_task_return_error(task, g_steal_pointer(&error));
+      return;
+    }
 
-    gchar **cols = g_strsplit(line, " ", 2);
+    gchar *stdout_buf = NULL;
 
-    if (cols[0] && g_str_has_suffix(cols[0], ".service"))
-      g_ptr_array_add(array, g_strdup(cols[0]));
+    if (!g_subprocess_communicate_utf8(proc, NULL, NULL, &stdout_buf, NULL,
+                                       &error)) {
+      g_free(stdout_buf);
+      g_task_return_error(task, g_steal_pointer(&error));
+      return;
+    }
 
-    g_strfreev(cols);
+    gchar *status = g_strstrip(stdout_buf);
+
+    gchar *name = NULL;
+    if (g_str_has_suffix(service, ".service"))
+      name = g_strndup(service, strlen(service) - 8);
+    else
+      name = g_strdup(service);
+
+    gchar *display = format_service_name(name);
+    g_free(name);
+
+    gchar *entry = g_strdup_printf("%s|%s", display, status);
+
+    g_free(display);
+    g_free(stdout_buf);
+
+    g_ptr_array_add(array, entry);
   }
-
-  g_strfreev(lines);
-  g_free(stdout_buf);
-  g_object_unref(proc);
 
   g_ptr_array_add(array, NULL);
 
@@ -58,6 +63,7 @@ static void services_list_thread(GTask *task, gpointer source,
 void services_list_async(GAsyncReadyCallback callback, gpointer user_data) {
   GTask *task = g_task_new(NULL, NULL, callback, user_data);
   g_task_run_in_thread(task, services_list_thread);
+  g_object_unref(task);
 }
 
 char **services_list_finish(GAsyncResult *res, GError **error) {

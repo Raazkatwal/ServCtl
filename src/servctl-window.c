@@ -10,6 +10,8 @@ struct _ServctlWindow {
   AdwApplicationWindow parent_instance;
 
   AdwPreferencesGroup *service_group;
+
+  GSettings *settings;
 };
 
 G_DEFINE_FINAL_TYPE(ServctlWindow, servctl_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -63,9 +65,11 @@ static void on_services_loaded(GObject *source, GAsyncResult *res,
 }
 
 static void servctl_window_init(ServctlWindow *self) {
+  self->settings = g_settings_new("com.raaz.servctl");
+
   gtk_widget_init_template(GTK_WIDGET(self));
 
-	services_list_async(on_services_loaded, self);
+  services_list_async(on_services_loaded, self);
 }
 
 static void servctl_window_class_init(ServctlWindowClass *klass) {
