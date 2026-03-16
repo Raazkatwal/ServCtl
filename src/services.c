@@ -46,7 +46,7 @@ static void services_list_thread(GTask *task, gpointer source,
     gchar *display = format_service_name(name);
     g_free(name);
 
-    gchar *entry = g_strdup_printf("%s|%s", display, status);
+    gchar *entry = g_strdup_printf("%s|%s|%s", service, display, status);
 
     g_free(display);
     g_free(stdout_buf);
