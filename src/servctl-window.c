@@ -17,11 +17,47 @@ struct _ServctlWindow {
 
 G_DEFINE_FINAL_TYPE(ServctlWindow, servctl_window, ADW_TYPE_APPLICATION_WINDOW)
 
-static gboolean on_service_switch_toggled(GtkSwitch *sw, gboolean state, gpointer user_data) {
-  const char *service_id = user_data;
-  const char *action = state ? "start" : "stop";
+static void on_systemctl_finished(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+  GSubprocess *proc = G_SUBPROCESS(source_object);
+  GtkButton *button = GTK_BUTTON(user_data);
+  GError *error = NULL;
 
-  g_print("Toggling service %s: %s\n", service_id, action);
+  gboolean wait_success = g_subprocess_wait_finish(proc, res, &error);
+
+  if (!wait_success) {
+    g_warning("systemctl wait failed: %s", error->message);
+    g_error_free(error);
+  } else if (!g_subprocess_get_successful(proc)) {
+    g_warning("systemctl process failed or was cancelled.");
+  } else {
+    // Only toggle the state visually if the process ran successfully
+    gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "is-active"));
+    is_active = !is_active;
+    g_object_set_data(G_OBJECT(button), "is-active", GINT_TO_POINTER(is_active));
+    
+    if (is_active) {
+      gtk_button_set_icon_name(button, "media-playback-stop-symbolic");
+      gtk_widget_set_tooltip_text(GTK_WIDGET(button), "Stop");
+    } else {
+      gtk_button_set_icon_name(button, "media-playback-start-symbolic");
+      gtk_widget_set_tooltip_text(GTK_WIDGET(button), "Start");
+    }
+
+    GtkWidget *row = gtk_widget_get_ancestor(GTK_WIDGET(button), ADW_TYPE_ACTION_ROW);
+    if (row) {
+      adw_action_row_set_subtitle(ADW_ACTION_ROW(row), is_active ? "Running" : "Stopped");
+    }
+  }
+
+  // Restore button sensitivity and clean up
+  gtk_widget_set_sensitive(GTK_WIDGET(button), TRUE);
+  g_object_unref(button);
+}
+
+static void execute_systemctl(GtkButton *button, const char *action) {
+  const char *service_id = g_object_get_data(G_OBJECT(button), "service-id");
+
+  g_print("Executing systemctl %s %s\n", action, service_id);
 
   GError *error = NULL;
   GSubprocess *proc = g_subprocess_new(
@@ -30,14 +66,27 @@ static gboolean on_service_switch_toggled(GtkSwitch *sw, gboolean state, gpointe
   if (!proc) {
     g_warning("Failed to run systemctl %s %s: %s", action, service_id, error->message);
     g_error_free(error);
-    return TRUE; // Stop the switch from changing state
+    return;
   }
 
-  // Wait asynchronously to reap the child and avoid blocking GTK
-  g_subprocess_wait_async(proc, NULL, NULL, NULL);
-  g_object_unref(proc);
+  // Disable the button while the process is running
+  gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
 
-  return FALSE;
+  // Wait asynchronously for the process to finish
+  g_subprocess_wait_async(proc, NULL, on_systemctl_finished, g_object_ref(button));
+  g_object_unref(proc);
+}
+
+static void on_service_toggle_clicked(GtkButton *button, gpointer user_data) {
+  gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "is-active"));
+  const char *action = is_active ? "stop" : "start";
+
+  // execute_systemctl now handles the state change on success
+  execute_systemctl(button, action);
+}
+
+static void on_service_restart_clicked(GtkButton *button, gpointer user_data) {
+  execute_systemctl(button, "restart");
 }
 
 static GtkWidget *create_service_row(const char *service_entry) {
@@ -54,21 +103,33 @@ static GtkWidget *create_service_row(const char *service_entry) {
   GtkWidget *row = adw_action_row_new();
   adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), display_name);
 
-  const char *subtitle = (g_strcmp0(status, "active") == 0) ? "Running" : "Stopped";
+  gboolean active = (g_strcmp0(status, "active") == 0);
+  const char *subtitle = active ? "Running" : "Stopped";
   adw_action_row_set_subtitle(ADW_ACTION_ROW(row), subtitle);
 
-  GtkSwitch *sw = GTK_SWITCH(gtk_switch_new());
-  gtk_widget_set_valign(GTK_WIDGET(sw), GTK_ALIGN_CENTER);
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+  gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
 
-  gboolean active = (g_strcmp0(status, "active") == 0);
-  gtk_switch_set_active(sw, active);
+  GtkWidget *btn_toggle = gtk_button_new_from_icon_name(
+      active ? "media-playback-stop-symbolic" : "media-playback-start-symbolic");
+  gtk_widget_add_css_class(btn_toggle, "flat");
+  gtk_widget_add_css_class(btn_toggle, "circular");
+  gtk_widget_set_tooltip_text(btn_toggle, active ? "Stop" : "Start");
+  g_object_set_data_full(G_OBJECT(btn_toggle), "service-id", g_strdup(service_id), g_free);
+  g_object_set_data(G_OBJECT(btn_toggle), "is-active", GINT_TO_POINTER(active));
+  g_signal_connect(btn_toggle, "clicked", G_CALLBACK(on_service_toggle_clicked), NULL);
 
-  // Store service_id to pass to the toggle callback. Use g_object_set_data_full for automatic cleanup
-  g_object_set_data_full(G_OBJECT(sw), "service-id", g_strdup(service_id), g_free);
-  g_signal_connect(sw, "state-set", G_CALLBACK(on_service_switch_toggled), 
-                   g_object_get_data(G_OBJECT(sw), "service-id"));
+  GtkWidget *btn_restart = gtk_button_new_from_icon_name("view-refresh-symbolic");
+  gtk_widget_add_css_class(btn_restart, "flat");
+  gtk_widget_add_css_class(btn_restart, "circular");
+  gtk_widget_set_tooltip_text(btn_restart, "Restart");
+  g_object_set_data_full(G_OBJECT(btn_restart), "service-id", g_strdup(service_id), g_free);
+  g_signal_connect(btn_restart, "clicked", G_CALLBACK(on_service_restart_clicked), NULL);
 
-  adw_action_row_add_suffix(ADW_ACTION_ROW(row), GTK_WIDGET(sw));
+  gtk_box_append(GTK_BOX(box), btn_toggle);
+  gtk_box_append(GTK_BOX(box), btn_restart);
+
+  adw_action_row_add_suffix(ADW_ACTION_ROW(row), box);
 
   return row;
 }
