@@ -24,6 +24,7 @@ executable(
     'src/main.c',
     'src/servctl-application.c',
     'src/servctl-window.c',
+    'src/servctl-add-window.c',
     'src/services.c',
     'src/utils.c',
     servctl_resources,

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0" />
+  <requires lib="Adw" version="1.0" />
+
+  <template class="ServctlAddWindow" parent="AdwPreferencesWindow">
+    <property name="title">Add System Services</property>
+    <property name="default-width">600</property>
+    <property name="default-height">550</property>
+
+    <child>
+      <object class="AdwPreferencesPage">
+        <child>
+          <object class="AdwPreferencesGroup" id="all_services_group">
+            <property name="title">All Installed Services</property>
+          </object>
+        </child>
+      </object>
+    </child>
+
+  </template>
+</interface>

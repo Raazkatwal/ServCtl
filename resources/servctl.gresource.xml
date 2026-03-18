@@ -2,5 +2,6 @@
 <gresources>
 	<gresource prefix="/com/raaz/servctl">
 		<file preprocess="xml-stripblanks">ui/servctl-window.ui</file>
+		<file preprocess="xml-stripblanks">ui/servctl-add-window.ui</file>
 	</gresource>
 </gresources>
