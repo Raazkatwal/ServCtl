@@ -23,7 +23,7 @@ G_DEFINE_FINAL_TYPE(ServctlWindow, servctl_window, ADW_TYPE_APPLICATION_WINDOW)
 
 static void on_systemctl_finished(GObject *source_object, GAsyncResult *res, gpointer user_data) {
   GSubprocess *proc = G_SUBPROCESS(source_object);
-  GtkButton *button = GTK_BUTTON(user_data);
+  GtkButton *action_btn = GTK_BUTTON(user_data);
   GError *error = NULL;
 
   gboolean wait_success = g_subprocess_wait_finish(proc, res, &error);
@@ -34,30 +34,40 @@ static void on_systemctl_finished(GObject *source_object, GAsyncResult *res, gpo
   } else if (!g_subprocess_get_successful(proc)) {
     g_warning("systemctl process failed or was cancelled.");
   } else {
-    gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "is-active"));
-    is_active = !is_active;
-    g_object_set_data(G_OBJECT(button), "is-active", GINT_TO_POINTER(is_active));
+    GtkButton *toggle_btn = g_object_get_data(G_OBJECT(action_btn), "toggle-btn");
+    if (!toggle_btn) toggle_btn = action_btn; // If none provided, target self
+
+    const char *action = g_object_get_data(G_OBJECT(action_btn), "pending-action");
+    gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(toggle_btn), "is-active"));
+
+    if (g_strcmp0(action, "restart") == 0) {
+      is_active = TRUE; // Restart means it's running now
+    } else {
+      is_active = !is_active;
+    }
+    
+    g_object_set_data(G_OBJECT(toggle_btn), "is-active", GINT_TO_POINTER(is_active));
     
     if (is_active) {
-      gtk_button_set_icon_name(button, "media-playback-stop-symbolic");
-      gtk_widget_set_tooltip_text(GTK_WIDGET(button), "Stop");
+      gtk_button_set_icon_name(toggle_btn, "media-playback-stop-symbolic");
+      gtk_widget_set_tooltip_text(GTK_WIDGET(toggle_btn), "Stop");
     } else {
-      gtk_button_set_icon_name(button, "media-playback-start-symbolic");
-      gtk_widget_set_tooltip_text(GTK_WIDGET(button), "Start");
+      gtk_button_set_icon_name(toggle_btn, "media-playback-start-symbolic");
+      gtk_widget_set_tooltip_text(GTK_WIDGET(toggle_btn), "Start");
     }
 
-    GtkWidget *row = gtk_widget_get_ancestor(GTK_WIDGET(button), ADW_TYPE_ACTION_ROW);
+    GtkWidget *row = gtk_widget_get_ancestor(GTK_WIDGET(toggle_btn), ADW_TYPE_ACTION_ROW);
     if (row) {
       adw_action_row_set_subtitle(ADW_ACTION_ROW(row), is_active ? "Running" : "Stopped");
     }
   }
 
-  gtk_widget_set_sensitive(GTK_WIDGET(button), TRUE);
-  g_object_unref(button);
+  gtk_widget_set_sensitive(GTK_WIDGET(action_btn), TRUE);
+  g_object_unref(action_btn);
 }
 
-static void execute_systemctl(GtkButton *button, const char *action) {
-  const char *service_id = g_object_get_data(G_OBJECT(button), "service-id");
+static void execute_systemctl(GtkButton *action_btn, GtkButton *toggle_btn, const char *action) {
+  const char *service_id = g_object_get_data(G_OBJECT(action_btn), "service-id");
   GError *error = NULL;
   GSubprocess *proc = g_subprocess_new(
       G_SUBPROCESS_FLAGS_NONE, &error, "systemctl", action, service_id, NULL);
@@ -68,18 +78,24 @@ static void execute_systemctl(GtkButton *button, const char *action) {
     return;
   }
 
-  gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
-  g_subprocess_wait_async(proc, NULL, on_systemctl_finished, g_object_ref(button));
+  gtk_widget_set_sensitive(GTK_WIDGET(action_btn), FALSE);
+  g_object_set_data(G_OBJECT(action_btn), "pending-action", (gpointer)action);
+  if (toggle_btn != action_btn) {
+    g_object_set_data(G_OBJECT(action_btn), "toggle-btn", toggle_btn);
+  }
+
+  g_subprocess_wait_async(proc, NULL, on_systemctl_finished, g_object_ref(action_btn));
   g_object_unref(proc);
 }
 
 static void on_service_toggle_clicked(GtkButton *button, gpointer user_data) {
   gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "is-active"));
-  execute_systemctl(button, is_active ? "stop" : "start");
+  execute_systemctl(button, button, is_active ? "stop" : "start");
 }
 
 static void on_service_restart_clicked(GtkButton *button, gpointer user_data) {
-  execute_systemctl(button, "restart");
+  GtkButton *toggle_btn = g_object_get_data(G_OBJECT(button), "toggle-btn");
+  execute_systemctl(button, toggle_btn, "restart");
 }
 
 static GtkWidget *create_service_row(const char *service_entry) {
@@ -117,6 +133,7 @@ static GtkWidget *create_service_row(const char *service_entry) {
   gtk_widget_add_css_class(btn_restart, "circular");
   gtk_widget_set_tooltip_text(btn_restart, "Restart");
   g_object_set_data_full(G_OBJECT(btn_restart), "service-id", g_strdup(service_id), g_free);
+  g_object_set_data(G_OBJECT(btn_restart), "toggle-btn", btn_toggle);
   g_signal_connect(btn_restart, "clicked", G_CALLBACK(on_service_restart_clicked), NULL);
 
   gtk_box_append(GTK_BOX(box), btn_toggle);
