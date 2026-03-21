@@ -13,12 +13,15 @@ struct _ServctlWindow {
 
   AdwPreferencesGroup *service_group;
   GtkWidget *add_service_button;
+  GtkWidget *start_all_button;
+  GtkWidget *stop_all_button;
+  GtkWidget *restart_all_button;
 
   GSettings *settings;
   GPtrArray *service_rows;
 };
 
-// ...
+
 G_DEFINE_FINAL_TYPE(ServctlWindow, servctl_window, ADW_TYPE_APPLICATION_WINDOW)
 
 static void on_systemctl_finished(GObject *source_object, GAsyncResult *res, gpointer user_data) {
@@ -60,6 +63,11 @@ static void on_systemctl_finished(GObject *source_object, GAsyncResult *res, gpo
     if (row) {
       adw_action_row_set_subtitle(ADW_ACTION_ROW(row), is_active ? "Running" : "Stopped");
     }
+
+    GtkWidget *indicator = g_object_get_data(G_OBJECT(toggle_btn), "status-indicator");
+    if (indicator) {
+      gtk_label_set_markup(GTK_LABEL(indicator), is_active ? "<span foreground='#26a269' size='large'>●</span>" : "<span foreground='#77767b' size='large'>●</span>");
+    }
   }
 
   gtk_widget_set_sensitive(GTK_WIDGET(action_btn), TRUE);
@@ -98,6 +106,39 @@ static void on_service_restart_clicked(GtkButton *button, gpointer user_data) {
   execute_systemctl(button, toggle_btn, "restart");
 }
 
+static void on_start_all_clicked(GtkButton *button, gpointer user_data) {
+  ServctlWindow *self = SERVCTL_WINDOW(user_data);
+  for (guint i = 0; i < self->service_rows->len; i++) {
+    GtkWidget *row = g_ptr_array_index(self->service_rows, i);
+    GtkButton *toggle_btn = g_object_get_data(G_OBJECT(row), "toggle-btn");
+    gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(toggle_btn), "is-active"));
+    if (!is_active) {
+      execute_systemctl(toggle_btn, toggle_btn, "start");
+    }
+  }
+}
+
+static void on_stop_all_clicked(GtkButton *button, gpointer user_data) {
+  ServctlWindow *self = SERVCTL_WINDOW(user_data);
+  for (guint i = 0; i < self->service_rows->len; i++) {
+    GtkWidget *row = g_ptr_array_index(self->service_rows, i);
+    GtkButton *toggle_btn = g_object_get_data(G_OBJECT(row), "toggle-btn");
+    gboolean is_active = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(toggle_btn), "is-active"));
+    if (is_active) {
+      execute_systemctl(toggle_btn, toggle_btn, "stop");
+    }
+  }
+}
+
+static void on_restart_all_clicked(GtkButton *button, gpointer user_data) {
+  ServctlWindow *self = SERVCTL_WINDOW(user_data);
+  for (guint i = 0; i < self->service_rows->len; i++) {
+    GtkWidget *row = g_ptr_array_index(self->service_rows, i);
+    GtkButton *toggle_btn = g_object_get_data(G_OBJECT(row), "toggle-btn");
+    execute_systemctl(toggle_btn, toggle_btn, "restart");
+  }
+}
+
 static GtkWidget *create_service_row(const char *service_entry) {
   g_auto(GStrv) parts = g_strsplit(service_entry, "|", 3);
   if (!parts || !parts[0] || !parts[1] || !parts[2]) {
@@ -116,6 +157,12 @@ static GtkWidget *create_service_row(const char *service_entry) {
   const char *subtitle = active ? "Running" : "Stopped";
   adw_action_row_set_subtitle(ADW_ACTION_ROW(row), subtitle);
 
+  GtkWidget *status_indicator = gtk_label_new(NULL);
+  gtk_label_set_markup(GTK_LABEL(status_indicator), active ? "<span foreground='#26a269' size='large'>●</span>" : "<span foreground='#77767b' size='large'>●</span>");
+  gtk_widget_set_valign(status_indicator, GTK_ALIGN_CENTER);
+  gtk_widget_set_margin_end(status_indicator, 6);
+  adw_action_row_add_prefix(ADW_ACTION_ROW(row), status_indicator);
+
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
 
@@ -126,6 +173,7 @@ static GtkWidget *create_service_row(const char *service_entry) {
   gtk_widget_set_tooltip_text(btn_toggle, active ? "Stop" : "Start");
   g_object_set_data_full(G_OBJECT(btn_toggle), "service-id", g_strdup(service_id), g_free);
   g_object_set_data(G_OBJECT(btn_toggle), "is-active", GINT_TO_POINTER(active));
+  g_object_set_data(G_OBJECT(btn_toggle), "status-indicator", status_indicator);
   g_signal_connect(btn_toggle, "clicked", G_CALLBACK(on_service_toggle_clicked), NULL);
 
   GtkWidget *btn_restart = gtk_button_new_from_icon_name("view-refresh-symbolic");
@@ -140,6 +188,7 @@ static GtkWidget *create_service_row(const char *service_entry) {
   gtk_box_append(GTK_BOX(box), btn_restart);
 
   adw_action_row_add_suffix(ADW_ACTION_ROW(row), box);
+  g_object_set_data(G_OBJECT(row), "toggle-btn", btn_toggle);
 
   return row;
 }
@@ -156,7 +205,6 @@ static void on_services_loaded(GObject *source, GAsyncResult *res, gpointer user
     return;
   }
 
-  // Clear tracked rows properly
   if (self->service_rows) {
     for (guint i = 0; i < self->service_rows->len; i++) {
       GtkWidget *row = g_ptr_array_index(self->service_rows, i);
@@ -205,6 +253,9 @@ static void servctl_window_init(ServctlWindow *self) {
 
   g_signal_connect(self->settings, "changed::services", G_CALLBACK(on_services_changed), self);
   g_signal_connect(self->add_service_button, "clicked", G_CALLBACK(on_add_service_clicked), self);
+  g_signal_connect(self->start_all_button, "clicked", G_CALLBACK(on_start_all_clicked), self);
+  g_signal_connect(self->stop_all_button, "clicked", G_CALLBACK(on_stop_all_clicked), self);
+  g_signal_connect(self->restart_all_button, "clicked", G_CALLBACK(on_restart_all_clicked), self);
 
   services_list_async(on_services_loaded, self);
 }
@@ -220,6 +271,9 @@ static void servctl_window_class_init(ServctlWindowClass *klass) {
 
   gtk_widget_class_bind_template_child(widget_class, ServctlWindow, service_group);
   gtk_widget_class_bind_template_child(widget_class, ServctlWindow, add_service_button);
+  gtk_widget_class_bind_template_child(widget_class, ServctlWindow, start_all_button);
+  gtk_widget_class_bind_template_child(widget_class, ServctlWindow, stop_all_button);
+  gtk_widget_class_bind_template_child(widget_class, ServctlWindow, restart_all_button);
 }
 
 ServctlWindow *servctl_window_new(AdwApplication *app) {

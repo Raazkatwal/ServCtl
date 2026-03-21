@@ -6,6 +6,8 @@
 	<template class="ServctlWindow"
 		parent="AdwApplicationWindow">
 
+		<property name="title" translatable="yes">Servctl</property>
+
 		<property name="default-width">800</property>
 		<property name="default-height">600</property>
 
